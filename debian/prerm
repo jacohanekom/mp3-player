@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+case "$1" in
+    remove|purge)
+        if systemctl is-active --quiet mp3-player.service 2>/dev/null; then
+            systemctl stop mp3-player.service || true
+        fi
+        if systemctl is-enabled --quiet mp3-player.service 2>/dev/null; then
+            systemctl disable mp3-player.service || true
+        fi
+        ;;
+esac
+#DEBHELPER#
+exit 0

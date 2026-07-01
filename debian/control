@@ -1,0 +1,25 @@
+Source: mp3-player
+Section: sound
+Priority: optional
+Maintainer: Jaco Hanekom <jhanekom@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               pkg-config,
+               libasound2-dev
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: mp3-player
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: HTTP-controlled MP3 jukebox
+ A small JSON HTTP API for managing and playing an MP3 library: upload
+ files, list the library, play a specific file, or play a random one.
+ Decoding uses a vendored public-domain MP3 decoder (no external decode
+ library); output goes through ALSA.
+ .
+ There is no web UI — the API is driven by curl or scripts.
+ .
+ API          : TCP :<8566>  (JSON over HTTP)
+ Library      : /var/lib/mp3-player/library
+ Config       : /etc/mp3-player/config.ini

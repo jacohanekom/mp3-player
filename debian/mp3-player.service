@@ -1,0 +1,30 @@
+[Unit]
+Description=HTTP-controlled MP3 jukebox
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=mp3-player
+Group=mp3-player
+
+ExecStart=/usr/bin/mp3_player --config /etc/mp3-player/config.ini
+
+Restart=on-failure
+RestartSec=5
+
+# ALSA device access
+SupplementaryGroups=audio
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=false
+ReadWritePaths=/var/lib/mp3-player
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mp3-player
+
+[Install]
+WantedBy=multi-user.target

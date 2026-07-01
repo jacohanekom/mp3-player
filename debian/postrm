@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+case "$1" in
+    remove)
+        rm -f /lib/systemd/system/mp3-player.service
+        systemctl daemon-reload || true
+        ;;
+    purge)
+        rm -f /lib/systemd/system/mp3-player.service
+        rm -f /usr/lib/systemd/system/mp3-player.service
+        systemctl daemon-reload || true
+        if id -u mp3-player > /dev/null 2>&1; then
+            deluser --system mp3-player || true
+        fi
+        rm -rf /etc/mp3-player || true
+        # Uploaded MP3s are left in place intentionally — they are user data,
+        # not package configuration. Remove manually if no longer needed:
+        echo "mp3-player: library left at /var/lib/mp3-player (not removed on purge)"
+        ;;
+esac
+#DEBHELPER#
+exit 0

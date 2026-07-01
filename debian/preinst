@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+rm -f /lib/systemd/system/mp3-player.service
+#DEBHELPER#
+exit 0
