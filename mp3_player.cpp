@@ -68,6 +68,7 @@
 #include "minimp3_ex.h"
 
 #include "config.hpp"
+#include "mdns.hpp"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global stop flag
@@ -464,10 +465,13 @@ int main(int argc, char **argv) {
     const std::string alsa_device    = cfg.get_str("audio.device", "default");
     const int         tcp_port       = cfg.get_int("tcp.port", 8566);
     const int         max_payload_mb = cfg.get_int("tcp.max_payload_mb", 100);
+    const bool        mdns_enabled   = cfg.get_bool("mdns.enabled", true);
+    const std::string mdns_name      = cfg.get_str("mdns.name", "mp3-player");
 
     std::cerr << "[Config] audio      : " << alsa_device << "\n"
               << "[Config] tcp        : 0.0.0.0:" << tcp_port << "\n"
-              << "[Config] max_payload: " << max_payload_mb << " MB\n";
+              << "[Config] max_payload: " << max_payload_mb << " MB\n"
+              << "[Config] mdns       : " << (mdns_enabled ? mdns_name : "disabled") << "\n";
 
     Player player(alsa_device);
     player.start();
@@ -475,9 +479,13 @@ int main(int argc, char **argv) {
     TcpServer server(tcp_port, static_cast<size_t>(max_payload_mb) * 1024 * 1024, player);
     server.start();
 
+    MdnsAnnouncer mdns(mdns_name, {{"_mp3player._tcp", static_cast<uint16_t>(tcp_port)}});
+    if (mdns_enabled) mdns.start();
+
     std::cerr << "[Main] Running.\n";
     while (!g_stop) std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
+    mdns.stop();
     player.wake();
     player.join();
 

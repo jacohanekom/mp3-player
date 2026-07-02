@@ -36,9 +36,19 @@ base64 -w0 song.mp3 | nc -q1 127.0.0.1 8566
 
 Volume is applied via the ALSA mixer (the first playback-capable simple element on the configured device, preferring one literally named `Master`) — it's a system-level mixer change, not a per-track gain, so it persists after the track finishes. If the device exposes no simple mixer control (common behind `dmix`/PulseAudio setups), setting the volume silently fails and playback proceeds at whatever level the device is already at.
 
+## Discovery (mDNS/DNS-SD)
+
+On startup the process announces itself on the LAN as `_mp3player._tcp` via Avahi, so you don't need to know its IP:
+
+```bash
+avahi-browse -rt _mp3player._tcp
+```
+
+This needs `avahi-daemon` running on the Pi (installed and enabled by default on Raspberry Pi OS). If it isn't running, `mp3_player` logs a warning at startup and continues normally — mDNS is discovery-only, not required for the TCP protocol to work. Disable it or change the advertised name via the `[mdns]` section in `config.ini`.
+
 ## Build
 
-Requires a C++20 compiler, CMake 3.16+, `pkg-config`, and ALSA development headers (`libasound2-dev` on Debian/Raspberry Pi OS).
+Requires a C++20 compiler, CMake 3.16+, `pkg-config`, ALSA development headers (`libasound2-dev`), and Avahi client development headers (`libavahi-client-dev`) — all on Debian/Raspberry Pi OS.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -72,6 +82,10 @@ device           = default     ; ALSA PCM device name (e.g. default, hw:0,0)
 [tcp]
 port             = 8566        ; plain TCP port (send base64 MP3, get back JSON)
 max_payload_mb   = 100         ; reject payloads larger than this (base64, not decoded size)
+
+[mdns]
+enabled          = true        ; announce _mp3player._tcp via avahi-daemon
+name             = mp3-player  ; service instance name shown in discovery
 ```
 
 Run `aplay -L` to list available ALSA devices if `default` doesn't route to the output you want.
