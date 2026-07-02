@@ -20,7 +20,6 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 PrivateDevices=false
-ReadWritePaths=/var/lib/mp3-player
 
 StandardOutput=journal
 StandardError=journal

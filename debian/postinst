@@ -15,11 +15,6 @@ case "$1" in
             usermod -aG audio mp3-player
         fi
 
-        # Library directory for uploaded/played files
-        mkdir -p /var/lib/mp3-player/library
-        chown -R mp3-player:mp3-player /var/lib/mp3-player
-        chmod 750 /var/lib/mp3-player /var/lib/mp3-player/library
-
         # Lock down config
         chown root:mp3-player /etc/mp3-player/config.ini
         chmod 640 /etc/mp3-player/config.ini
@@ -33,9 +28,7 @@ echo "  Edit config : /etc/mp3-player/config.ini"
 echo "                Verify audio.device matches your sound card"
 echo "                Run 'aplay -L' to list ALSA devices"
 echo "  Enable      : systemctl enable --now mp3-player"
-echo "  Upload      : curl --data-binary @song.mp3 \"http://127.0.0.1:8566/upload?name=song.mp3\""
-echo "  List        : curl http://127.0.0.1:8566/files"
-echo "  Play        : curl -X POST \"http://127.0.0.1:8566/play?name=song.mp3\""
-echo "  Random      : curl -X POST http://127.0.0.1:8566/play/random"
+echo "  Play        : base64 -w0 song.mp3 | nc -q1 127.0.0.1 8566"
+echo "  Play at vol : (printf \"volume=40\\n\"; base64 -w0 song.mp3) | nc -q1 127.0.0.1 8566"
 echo ""
 exit 0
