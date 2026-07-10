@@ -1,0 +1,50 @@
+# Builds the mp3-player Debian package NATIVELY for arm64, using a real
+# arm64 Docker daemon (e.g. colima on Apple Silicon, which runs a genuine
+# arm64 Linux VM — no QEMU emulation involved despite the host being a
+# Mac). Same approach as the sibling picam-raw/picam-hailo/
+# picam-orchestrator-go/picam-frontend-go projects' Dockerfile.native-arm64.
+#
+# Unlike picam-raw/picam-hailo, every build dependency here (cmake,
+# pkg-config, libasound2-dev, libavahi-client-dev) is a plain Debian
+# package — no Raspberry Pi-specific repo needed at all.
+#
+# Usage (from this directory, on a genuinely arm64 Docker host):
+#   docker build --platform linux/arm64 -f Dockerfile.native-arm64 -t mp3-player-builder .
+#   docker create --name mp3-player-extract mp3-player-builder
+#   docker cp mp3-player-extract:/out ./dist
+#   docker rm mp3-player-extract
+
+FROM debian:bookworm-slim AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        debhelper \
+        devscripts \
+        cmake \
+        pkg-config \
+        libasound2-dev \
+        libavahi-client-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+# Stamp a build-time version (base version + UTC date/time as a Debian
+# local-version suffix — see picam-orchestrator-go/Dockerfile.native-arm64
+# for the rationale). Timestamp is a plain contiguous digit run
+# (YYYYMMDDHHMMSS, no separator): this project's changelog already embeds
+# a compact undotted timestamp (1.0.0+202607010000-1), and dpkg compares
+# maximal digit runs as arbitrary-precision integers — a dot would end
+# that run early and make a chronologically later build compare as an
+# EARLIER version (confirmed the hard way while building picam-raw).
+RUN set -e; \
+    BASEVER="$(dpkg-parsechangelog -S Version | sed -E 's/\+.*//')"; \
+    TS="$(date -u +%Y%m%d%H%M%S)"; \
+    DEBEMAIL="jhanekom@gmail.com" DEBFULLNAME="Jaco Hanekom" \
+        dch --newversion "${BASEVER}+${TS}-1" --distribution stable --force-distribution \
+        "Automated native arm64 build (UTC ${TS})."; \
+    dpkg-buildpackage -us -uc -b
+
+# Build artifacts land one directory above the source tree by default
+# for "3.0 (native)" format source packages.
+RUN mkdir -p /out && cp /*.deb /*.changes /*.buildinfo /out/ 2>/dev/null || cp /*.deb /out/
